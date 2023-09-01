@@ -1,0 +1,54 @@
+Trigger :
+- none
+
+parameters:
+- name: RepositoryName
+  type: string
+  default: 'misc-service'
+  values:
+  - misc-service
+  - user-management
+  - onboarding-service
+  - callback-service
+  - transaction-service
+  
+- name: number
+  type: number
+  default: '2'
+  values:
+  - 3
+  - 4
+  - 5
+  - 6
+  - 7
+  - 8
+  - 9
+  - 10
+  
+  
+steps:
+- task: AzureCLI@2
+  displayName: 'Image retention'
+  inputs:
+    azureSubscription: 'zarga-devops-serviceconnection-azure'
+    scriptType: 'bash'
+    scriptLocation: 'inlineScript'
+    inlineScript: |
+      
+      # Get the list of all tags in descending order of time
+	  tags=$(az acr repository show-tags --name zargadevcontainerregistry --repository ${parameters.RepositoryName} --orderby time_desc --output tsv)
+      
+      # Count the number of tags
+      tagCount=$(echo "$tags" | wc -w)
+      
+      i=0
+      for tag in $tags; do
+          if [ $i -lt ${parameters.number} ]; then
+            echo "Keeping tag: $tag"
+          else
+            echo "Deleting tag: $tag"
+            # Uncomment the following line to delete the tag
+            #az acr repository untag --name zargadevcontainerregistry --repository ${parameters.RepositoryName} --image $tag
+          fi
+          ((i++))
+      done
